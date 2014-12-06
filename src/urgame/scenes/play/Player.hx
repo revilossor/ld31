@@ -2,17 +2,20 @@ package urgame.scenes.play;
 import flambe.Component;
 import flambe.display.FillSprite;
 import flambe.Entity;
+import flambe.math.Rectangle;
 import flambe.System;
 import nape.callbacks.CbEvent;
 import nape.callbacks.CbType;
 import nape.callbacks.InteractionCallback;
 import nape.callbacks.InteractionListener;
 import nape.callbacks.InteractionType;
+import nape.geom.AABB;
 import nape.geom.Vec2;
 import nape.phys.Body;
 import nape.phys.BodyList;
 import nape.phys.Material;
 import nape.shape.Polygon;
+import nape.shape.ShapeList;
 
 /**
  * ...
@@ -33,6 +36,11 @@ class Player extends Component
 	private var _isJumping:Bool = false;
 	private var _jumpCounter:Int = 0;
 	
+	private var _touchingBottom:Bool = false;
+	private var _touchingTop:Bool = false;
+	private var _touchingLeft:Bool = false;
+	private var _touchingRight:Bool = false;
+	
 	public function new(xp:Float, yp:Float) 
 	{
 		_xp = xp;
@@ -40,8 +48,9 @@ class Player extends Component
 	}
 	override public function onAdded():Void {
 		body = new Body();
-		body.shapes.add(new Polygon(Polygon.box(GameConfig.playerWidth, GameConfig.playerHeight), new Material(0,0,0)));	// TODO dont allow rotate, mass
+		body.shapes.add(new Polygon(Polygon.box(GameConfig.playerWidth, GameConfig.playerHeight), new Material(0,0,0)));
 		body.position = Vec2.get(_xp, _yp, true);
+		body.allowRotation = false;
 		var entity:Entity = PlayModel.space.addBody(body);
 		entity.add(sprite = new FillSprite(GameConfig.playerColour, GameConfig.playerWidth, GameConfig.playerHeight));
 		sprite.centerAnchor();
@@ -50,8 +59,10 @@ class Player extends Component
 	}
 	override public function onUpdate(dt:Float):Void {
 		checkPlayerCollision();
+		
+		if(_numInteracting >= 1){ _flipped?body.velocity.x = -GameConfig.playerSpeed:body.velocity.x = GameConfig.playerSpeed;}
+		
 		if (System.pointer.isDown() && _isJumping) {
-			trace('continue jump');
 			if (_jumpCounter++ > GameConfig.playerJumpDuration) {
 				stopJump();
 			}else{
@@ -61,7 +72,8 @@ class Player extends Component
 		
 	}
 	private function checkPlayerCollision():Void {
-		_numInteracting = Lambda.count(body.interactingBodies());
+		var ib:BodyList = body.interactingBodies();
+		_numInteracting = Lambda.count(ib);
 		if (_numInteracting > 1) { flipVelocity(); }
 	}
 	private function flipVelocity():Void {		// not sure this hack will work with different delta times.... 
@@ -76,7 +88,6 @@ class Player extends Component
 	}
 	public function jump():Void {
 		if (_isJumping == false && _numInteracting >= 1) {
-			trace('start jump');
 			_isJumping = true;
 			body.applyImpulse(Vec2.get(0, -GameConfig.playerJumpInitial, true));
 		}
@@ -84,6 +95,5 @@ class Player extends Component
 	public function stopJump():Void {
 		_isJumping = false;
 		_jumpCounter = 0;
-		trace('stop jump');
 	}
 }

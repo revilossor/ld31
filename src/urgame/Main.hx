@@ -13,6 +13,6 @@ class Main
 		var game:OliGame = new OliGame(360, 220);
 		game.ready.connect(function():Void {
 			OliGameContext.instance.director.unwindToScene(MenuScene.create(), new FadeTransition(1, Ease.linear));
-		});
+		}).once();
 	}
 }

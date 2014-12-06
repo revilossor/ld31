@@ -9,6 +9,7 @@ import flambe.scene.SlideTransition;
 import flambe.System;
 import oli.OliGameContext;
 import oli.util.OliG;
+import oli.Viewport;
 import urgame.scenes.play.PlayScene;
 
 /**
@@ -26,8 +27,9 @@ class MenuModel extends Component
 	override public function onAdded():Void {
 		addGraphics();
 		System.pointer.up.connect(function(e:PointerEvent):Void {
-			var transition:SlideTransition = new SlideTransition(1, Ease.quadIn);
-			OliGameContext.instance.director.unwindToScene(PlayScene.create());
+			Viewport.instance.fadeOut(0x000000, 1, function():Void {				
+				OliGameContext.instance.director.unwindToScene(PlayScene.create());
+			});
 		}).once();	
 	}
 	private function addGraphics():Void {
