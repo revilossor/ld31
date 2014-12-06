@@ -28,11 +28,8 @@ class MenuModel extends Component
 		System.pointer.up.connect(function(e:PointerEvent):Void {
 			var transition:SlideTransition = new SlideTransition(1, Ease.quadIn);
 			OliGameContext.instance.director.unwindToScene(PlayScene.create(), transition.up());
-		});
-			
-		
+		}).once();	
 	}
-	
 	private function addGraphics():Void {
 		owner.addChild(new Entity().add(new FillSprite(GameConfig.bgColour, OliG.width, OliG.height)));	// bg
 		owner.addChild(new Entity()

@@ -17,6 +17,7 @@
   <classpaths>
     <class path="src" />
     <class path="..\..\..\..\lib" />
+    <class path="..\..\..\..\..\HaxeToolkit\haxe\lib\nape\2,0,16\nape" />
   </classpaths>
   <!-- Build options -->
   <build>
