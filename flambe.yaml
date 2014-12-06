@@ -17,20 +17,20 @@ version: 1.0.0
 main: urgame.Main
 
 # The platform to use when invoking `run` or `build` with no arguments.
-default_platform: flash
+default_platform: html
 
 # The initial orientation and fullscreen state on mobile devices.
 orientation: portrait
 fullscreen: true
 
 # Additional flags to pass to the Haxe compiler.
-# haxe_flags: -lib nape -D foobar
+haxe_flags: -lib nape -D NAPE_RELEASE_BUILD
 
 # Additional paths to include in the build.
-# extra_paths:
+extra_paths:
 #   assets: dir1 dir2
 #   libs: dir1 dir2
-#   src: ../dir1 ../dir2
+  src: ../../../../lib
 #   web: ["dir1 with spaces", "dir2"]
 
 # Android-specific configuration.
