@@ -3,7 +3,7 @@ import flambe.animation.Ease;
 import flambe.scene.FadeTransition;
 import oli.OliGame;
 import oli.OliGameContext;
-import urgame.scenes.MenuScene;
+import urgame.scenes.menu.MenuScene;
 
 
 class Main
@@ -12,7 +12,6 @@ class Main
 	{
 		var game:OliGame = new OliGame(360, 220);
 		game.ready.connect(function():Void {
-			trace('initialistion complete');
 			OliGameContext.instance.director.unwindToScene(MenuScene.create(), new FadeTransition(1, Ease.linear));
 		});
 	}
