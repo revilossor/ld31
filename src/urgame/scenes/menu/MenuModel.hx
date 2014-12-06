@@ -27,7 +27,7 @@ class MenuModel extends Component
 		addGraphics();
 		System.pointer.up.connect(function(e:PointerEvent):Void {
 			var transition:SlideTransition = new SlideTransition(1, Ease.quadIn);
-			OliGameContext.instance.director.unwindToScene(PlayScene.create(), transition.up());
+			OliGameContext.instance.director.unwindToScene(PlayScene.create());
 		}).once();	
 	}
 	private function addGraphics():Void {

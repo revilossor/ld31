@@ -21,6 +21,8 @@ class PlayModel extends Component
 	private var _playerLayer:Entity;
 	private var _goalLayer:Entity;
 	
+	private var _player:Player;
+	
 	public function new() 
 	{
 		
@@ -31,8 +33,9 @@ class PlayModel extends Component
 		owner.add(space = new SpaceComponent(1000));
 		initLayers();
 		addBorder();
+		addPlayer();
 	}
-	private function initLayers() {
+	private function initLayers():Void {
 		owner.addChild(_borderLayer = new Entity());
 		owner.addChild(_collectLayer = new Entity());
 		owner.addChild(_hazardLayer = new Entity());
@@ -40,14 +43,13 @@ class PlayModel extends Component
 		owner.addChild(_playerLayer = new Entity());
 		owner.addChild(_goalLayer = new Entity());
 	}
-	private function addBorder() {
+	private function addBorder():Void {
 		_borderLayer.add(new RectBody(0, 0, GameConfig.borderWidth, OliG.height, GameConfig.borderColour));
 		_borderLayer.add(new RectBody(OliG.width - GameConfig.borderWidth, 0, GameConfig.borderWidth, OliG.height, GameConfig.borderColour));
 		_borderLayer.add(new RectBody(GameConfig.borderWidth, 0, OliG.width - GameConfig.borderWidth * 2, GameConfig.borderWidth, GameConfig.borderColour));
 		_borderLayer.add(new RectBody(GameConfig.borderWidth, OliG.height - GameConfig.borderWidth, OliG.width - GameConfig.borderWidth * 2, GameConfig.borderWidth, GameConfig.borderColour));
-		
-		
-		
 	}
-	
+	private function addPlayer():Void {
+		_playerLayer.add(new Player(100, 100));
+	}
 }
