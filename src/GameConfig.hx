@@ -13,6 +13,5 @@ class GameConfig
 	public static var playerWidth:Float = 10; 
 	public static var playerHeight:Float = 14; 
 	public static var playerColour:Int = 0x00ff00;
-	
-	
+	public static var playerSpeed:Float = 50;
 }

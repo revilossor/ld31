@@ -28,7 +28,6 @@ class PlayModel extends Component
 		
 	}
 	override public function onAdded():Void {
-		trace('onAdded');
 		owner.addChild(new Entity().add(new FillSprite(GameConfig.bgColour, OliG.width, OliG.height)));	// bg
 		owner.add(space = new SpaceComponent(1000));
 		initLayers();
