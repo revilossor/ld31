@@ -2,8 +2,13 @@ package urgame.scenes.play;
 import flambe.Component;
 import flambe.display.FillSprite;
 import flambe.Entity;
+import flambe.input.PointerEvent;
+import flambe.System;
+import nape.geom.Vec2;
 import oli.nape.SpaceComponent;
 import oli.util.OliG;
+import oli.util.VecFunc;
+import oli.Viewport;
 import urgame.scenes.play.comp.RectBody;
 
 /**
@@ -23,6 +28,9 @@ class PlayModel extends Component
 	
 	private var _player:Player;
 	
+	private var _isJumping:Bool = false;
+	private var _isDragging:Bool = false;
+	
 	public function new() 
 	{
 		
@@ -33,7 +41,9 @@ class PlayModel extends Component
 		initLayers();
 		addBorder();
 		addPlayer();
+		initInteraction();
 	}
+	
 	private function initLayers():Void {
 		owner.addChild(_borderLayer = new Entity());
 		owner.addChild(_collectLayer = new Entity());
@@ -49,6 +59,27 @@ class PlayModel extends Component
 		_borderLayer.add(new RectBody(GameConfig.borderWidth, OliG.height - GameConfig.borderWidth, OliG.width - GameConfig.borderWidth * 2, GameConfig.borderWidth, GameConfig.borderColour));
 	}
 	private function addPlayer():Void {
-		_playerLayer.add(new Player(100, 100));
+		_playerLayer.add(_player = new Player(100, 100));
+	}
+	private function initInteraction():Void {
+		System.pointer.down.connect(function(e:PointerEvent):Void {
+			var pos:Vec2 = Vec2.get(Viewport.instance.getRelativeX(e.viewX), Viewport.instance.getRelativeY(e.viewY));
+			if (VecFunc.getDistanceBetween(pos, _player.body.position) < GameConfig.playerTapRadius) {
+				_isJumping = true;
+				_player.jump();
+			}else {
+				_isDragging = true;
+				//trace('tap elsewhere');
+			}
+		});
+		System.pointer.up.connect(function(e:PointerEvent):Void {
+			if (_isJumping) {
+				_isJumping = false;
+				_player.stopJump();
+			}else {
+				_isDragging = false;
+				//trace('stop dragging');
+			}
+		});
 	}
 }

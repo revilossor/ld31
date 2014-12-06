@@ -14,4 +14,8 @@ class GameConfig
 	public static var playerHeight:Float = 14; 
 	public static var playerColour:Int = 0x00ff00;
 	public static var playerSpeed:Float = 50;
+	public static var playerTapRadius:Float = 20;
+	public static var playerJumpInitial:Float = 15;
+	public static var playerJumpHold:Float = 2.75;
+	public static var playerJumpDuration:Int = 20;
 }
