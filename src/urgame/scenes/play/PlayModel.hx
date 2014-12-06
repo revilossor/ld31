@@ -1,4 +1,5 @@
 package urgame.scenes.play;
+import flambe.animation.Ease;
 import flambe.Component;
 import flambe.display.FillSprite;
 import flambe.Entity;
@@ -7,9 +8,11 @@ import flambe.math.Rectangle;
 import flambe.System;
 import nape.geom.Vec2;
 import oli.nape.SpaceComponent;
+import oli.OliGameContext;
 import oli.util.OliG;
 import oli.util.VecFunc;
 import oli.Viewport;
+import urgame.scenes.play.comp.GoalComponent;
 import urgame.scenes.play.comp.RectBody;
 
 /**
@@ -39,6 +42,8 @@ class PlayModel extends Component
 	private var _playerInTempRect:Bool = false;
 	private var _tempRectTooSmall:Bool = false;
 	
+	private var _goalPos:Vec2 = Vec2.get(OliG.width / 2 - 7, 20);
+	
 	public function new() 
 	{
 		
@@ -48,11 +53,10 @@ class PlayModel extends Component
 		owner.addChild(new Entity().add(new FillSprite(GameConfig.bgColour, OliG.width, OliG.height)));	// bg
 		owner.add(space = new SpaceComponent(1000));
 		initLayers();
-		//initTempRect();
 		addBorder();
 		addPlayer();
 		initInteraction();
-		//initGoal();
+		initGoal();
 	}
 	private function initLayers():Void {
 		owner.addChild(_borderLayer = new Entity());
@@ -60,8 +64,8 @@ class PlayModel extends Component
 		owner.addChild(_collectLayer = new Entity());
 		owner.addChild(_hazardLayer = new Entity());
 		owner.addChild(_platformLayer = new Entity());
-		owner.addChild(_playerLayer = new Entity());
 		owner.addChild(_goalLayer = new Entity());
+		owner.addChild(_playerLayer = new Entity());
 	}
 	private function initTempRect():Void {
 		_drawingLayer.addChild(new Entity().add(_tempRect = new FillSprite(0xffffff, 0, 0)));
@@ -99,6 +103,9 @@ class PlayModel extends Component
 			}
 		});
 	}
+	private function initGoal():Void {
+		_goalLayer.add(new GoalComponent(_goalPos.x, _goalPos.y));
+	}
 	private function startDrag(startpos:Vec2):Void {
 		_startDragPoint = startpos;
 		_isDragging = true;
@@ -106,10 +113,7 @@ class PlayModel extends Component
 	}
 	private function endDrag():Void {
 		_isDragging = false;
-		//if(_tempRect != null){
-		trace('relaese');
-			addPlatform(_tempRect.x._, _tempRect.y._, _tempRect.width._, _tempRect.height._);
-		//}
+		addPlatform(_tempRect.x._, _tempRect.y._, _tempRect.width._, _tempRect.height._);
 		_drawingLayer.disposeChildren();
 	}
 	private function getRectFromPoints(endpoint:Vec2) {
@@ -124,9 +128,7 @@ class PlayModel extends Component
 		}else if (_startDragPoint.x > endpoint.x && _startDragPoint.y > endpoint.y) {
 			xp = endpoint.x; yp =  endpoint.y; width =  Math.abs(between.x); height = Math.abs(between.y);
 		}
-		//if (xp != 0 && yp != 0 && width != 0 && height != 0) {
-			updateTempRect(xp, yp, width, height);
-		//}
+		updateTempRect(xp, yp, width, height);
 	}
 	private function updateTempRect(xp:Float, yp:Float, width:Float, height:Float):Void {
 		_drawingLayer.disposeChildren();
@@ -139,11 +141,9 @@ class PlayModel extends Component
 		_drawingLayer.addChild(new Entity().add(_tempRect));
 	}
 	private function addPlatform(xp:Float, yp:Float, width:Float, height:Float):Void {
-		trace('add w : $width h $height x $xp y $yp');
 		if (_tempRectTooSmall || _playerInTempRect) { return; }
 		if (xp == 0 || yp == 0 || width == 0 || height == 0) { return; }
 		_platformLayer.add(new RectBody(xp, yp, width, height, GameConfig.platformColour));
-		trace('...done');
 	}
 	private function isPlayerInRect(rect:Rectangle):Bool {
 		//trace('player y ' + _player.sprite.y._ + ' rect bottom : ' + rect.bottom); 
@@ -162,6 +162,13 @@ class PlayModel extends Component
 	override public function onUpdate(dt:Float):Void {
 		if(_tempRect!= null){
 			_playerInTempRect =	isPlayerInRect(new Rectangle(_tempRect.x._, _tempRect.y._, _tempRect.getNaturalWidth(), _tempRect.getNaturalHeight()));
+		}
+		if (VecFunc.distanceCheck(_player.body.position, Vec2.get(_goalPos.x +  7, _goalPos.y + 7), 5)) {
+			_player.body.velocity = Vec2.get();
+			_player.sprite.alpha.animateTo(0, 1, Ease.circOut);
+			Viewport.instance.fadeOut(0x000000, 1, function():Void {
+				OliGameContext.instance.director.unwindToScene(PlayScene.create());		//TODO difficulty
+			});
 		}
 	}
 
