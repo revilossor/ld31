@@ -2,6 +2,7 @@ package urgame.scenes.play.comp;
 import flambe.Component;
 import flambe.display.FillSprite;
 import flambe.Entity;
+import flambe.math.Rectangle;
 import nape.phys.Body;
 import nape.phys.BodyType;
 import nape.shape.Polygon;
@@ -21,6 +22,7 @@ class RectBody extends Component
 	
 	public var body:Body;
 	public var sprite:FillSprite;
+	public var rect:Rectangle;
 	
 	public function new(xp:Float, yp:Float, width:Float, height:Float, colour:Int) 
 	{
@@ -38,6 +40,8 @@ class RectBody extends Component
 		sprite = new FillSprite(_colour, _width, _height);
 		sprite.setXY(_xp, _yp);
 		owner.addChild(new Entity().add(sprite));
+		
+		rect = new Rectangle(_xp, _yp, _width, _height);
 	}
 	
 	

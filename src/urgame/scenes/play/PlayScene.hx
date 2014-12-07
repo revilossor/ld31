@@ -7,7 +7,7 @@ import flambe.Entity;
  */
 class PlayScene
 {
-	public static function create():Entity {
-		return new Entity().add(new PlayModel());
+	public static function create(data:Map<String, Dynamic> = null):Entity {
+		return new Entity().add(new PlayModel(data));
 	}
 }
