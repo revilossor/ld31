@@ -2,17 +2,22 @@ package urgame.scenes.play;
 import flambe.animation.Ease;
 import flambe.Component;
 import flambe.display.FillSprite;
+import flambe.display.ImageSprite;
 import flambe.Entity;
 import flambe.input.PointerEvent;
 import flambe.math.Rectangle;
 import flambe.System;
+import nape.geom.AABB;
 import nape.geom.Vec2;
 import oli.nape.SpaceComponent;
 import oli.OliGameContext;
 import oli.util.OliG;
 import oli.util.VecFunc;
 import oli.Viewport;
+import urgame.scenes.menu.MenuScene;
 import urgame.scenes.play.comp.GoalComponent;
+import urgame.scenes.play.comp.HazardComponent;
+import urgame.scenes.play.comp.KeyCoponent;
 import urgame.scenes.play.comp.RectBody;
 import urgame.scenes.summary.SummaryScene;
 
@@ -31,6 +36,7 @@ class PlayModel extends Component
 	private var _platformLayer:Entity;
 	private var _playerLayer:Entity;
 	private var _goalLayer:Entity;
+	private var _uiLayer:Entity;
 	
 	private var _player:Player;
 	private var _allPlatforms:Array<RectBody> = new Array<RectBody>();
@@ -44,6 +50,7 @@ class PlayModel extends Component
 	private var _playerInTempRect:Bool = false;
 	private var _goalInTempRect:Bool = false;
 	private var _platformInTempRect:Bool = false;
+	private var _keyInTempRect:Bool = false;
 	private var _tempRectTooSmall:Bool = false;
 	private var _tempRectOffscreen:Bool = false;
 	
@@ -54,9 +61,19 @@ class PlayModel extends Component
 	private var _jumps:Int = 0;
 	private var _time:Int = 0;
 	
-	public function new(data:Map<String, Dynamic> = null) 
+	private var _numKeys:Int = 0;
+	private var _allKeys:Array<KeyCoponent> = new Array<KeyCoponent>();
+	private var _possKeyPos:Array<Dynamic>;
+	
+	private var _numHaz:Int = 0;
+	private var _allHaz:Array<HazardComponent> = new Array<HazardComponent>();
+	
+	public function new(data:Map<String, Dynamic> = null, keys:Int = 0, haz = 0) 
 	{
 		data == null?_progressTable = new Map<String, Dynamic>():_progressTable = data;
+		_numKeys = keys;
+		_numHaz = haz;
+		_possKeyPos = _progressTable.get(GameConfig.PLATFORMS);
 		_progressTable.set(GameConfig.PLATFORMS, new Array<Dynamic>());
 		_progressTable.set(GameConfig.TIME_TAKEN, 0);
 		_progressTable.set(GameConfig.JUMPS, 0);
@@ -64,22 +81,26 @@ class PlayModel extends Component
 	}
 	override public function onAdded():Void {
 		Viewport.instance.fadeIn(0x000000, 1);
-		owner.addChild(new Entity().add(new FillSprite(GameConfig.bgColour, OliG.width, OliG.height)));	// bg
+		owner.addChild(new Entity().add(new ImageSprite(OliGameContext.instance.assets.getTexture('play/bg'))));	// bg
 		owner.add(space = new SpaceComponent(1000));
 		initLayers();
 		addBorder();
 		addPlayer();
 		initInteraction();
 		initGoal();
+		initKeys();
+		initHazards();
+		initUI();
 	}
 	private function initLayers():Void {
 		owner.addChild(_borderLayer = new Entity());
 		owner.addChild(_drawingLayer = new Entity());
 		owner.addChild(_collectLayer = new Entity());
-		owner.addChild(_hazardLayer = new Entity());
 		owner.addChild(_platformLayer = new Entity());
 		owner.addChild(_goalLayer = new Entity());
+		owner.addChild(_hazardLayer = new Entity());
 		owner.addChild(_playerLayer = new Entity());
+		owner.addChild(_uiLayer = new Entity());
 	}
 	private function initTempRect():Void {
 		_drawingLayer.addChild(new Entity().add(_tempRect = new FillSprite(0xffffff, 0, 0)));
@@ -91,7 +112,7 @@ class PlayModel extends Component
 		_borderLayer.add(new RectBody(GameConfig.borderWidth, OliG.height - GameConfig.borderWidth, OliG.width - GameConfig.borderWidth * 2, GameConfig.borderWidth, GameConfig.borderColour));
 	}
 	private function addPlayer():Void {
-		_playerLayer.add(_player = new Player(100, 100));
+		_playerLayer.add(_player = new Player(GameConfig.playerStartPos.x, GameConfig.playerStartPos.y));
 	}
 	private function initInteraction():Void {
 		System.pointer.down.connect(function(e:PointerEvent):Void {
@@ -106,7 +127,6 @@ class PlayModel extends Component
 		System.pointer.up.connect(function(e:PointerEvent):Void {
 			if (_isJumping) {
 				_jumps++;					// TODO can increment this when in air... move to player???
-				trace('jumps $_jumps');
 				_isJumping = false;
 				_player.stopJump();
 			}else if(_isDragging) {
@@ -125,6 +145,59 @@ class PlayModel extends Component
 		_platformLayer.add(rect);
 		_allPlatforms.push(rect);
 	}
+	private function initKeys():Void {
+		if(_numKeys > 0){
+			//addKey(300, 100);
+			_possKeyPos.sort(function(a, b):Int { return b.area - a.area; } );	
+			var c:Int = _numKeys;
+			for (plat in _possKeyPos) {
+				if (c-- > 0) {
+					var pos:Vec2 = cast plat.midpoint;
+					addKey(pos.x, pos.y);
+				}else {
+					break;
+				}
+			}
+			if (c > 0) {
+				addKey(Math.random() * OliG.width, Math.random() * OliG.height);
+			}
+		}
+	}
+	private function addKey(xp:Float, yp:Float):Void {
+		var key:KeyCoponent = new KeyCoponent(xp, yp);
+		_hazardLayer.add(key);
+		_allKeys.push(key);
+	}
+	private function initHazards():Void {
+		for (h in 0 ... _numHaz) {
+			addHaz();
+		}
+	}
+	private function addHaz():Void {
+		var haz:HazardComponent = new HazardComponent(40 + (Math.random() * (OliG.width - 50)), 40 + (Math.random() * (OliG.height - 50)));
+		_hazardLayer.addChild(new Entity().add(haz));
+		_allHaz.push(haz);
+	}
+	private function initUI():Void {
+		var btn:ImageSprite = new ImageSprite(OliGameContext.instance.assets.getTexture('play/close'));
+		btn.alpha._ = 0;
+		btn.alpha.animateTo(0.3, 3, Ease.linear);
+		btn.setXY(331, 3);
+		btn.pointerIn.connect(function(e:PointerEvent):Void {
+			btn.alpha.animateTo(0.8, 0.5, Ease.linear);
+		});
+		btn.pointerOut.connect(function(e:PointerEvent):Void {
+			btn.alpha.animateTo(0.3, 0.5, Ease.linear);
+		});
+		btn.pointerUp.connect(function(e:PointerEvent):Void {
+			OliGameContext.instance.assets.getSound('menu').play(0.3);
+			Viewport.instance.fadeOut(0x000000, 1, function():Void {
+				OliGameContext.instance.director.unwindToScene(MenuScene.create());
+			});
+		});
+		_uiLayer.addChild(new Entity().add(btn));
+	}
+	
 	private function startDrag(startpos:Vec2):Void {
 		if (startpos.x < 0 || startpos.x > OliG.width || startpos.y < 0 || startpos.y > OliG.height) { trace('offscreen start!'); return; }
 		_startDragPoint = startpos;
@@ -155,17 +228,18 @@ class PlayModel extends Component
 		_drawingLayer.disposeChildren();
 		var error:Bool = false;
 		_tempRectTooSmall = (width < GameConfig.minimumPlatformSize || height < GameConfig.minimumPlatformSize);
-		if (_tempRectTooSmall || _playerInTempRect || _tempRectOffscreen || _goalInTempRect || _platformInTempRect) { error = true; }
+		if (_tempRectTooSmall || _playerInTempRect || _tempRectOffscreen || _goalInTempRect || _platformInTempRect ||_keyInTempRect) { error = true; }
 		_tempRect = new FillSprite(error?GameConfig.tempRectErrorColour:GameConfig.tempRectColour, width, height);
 		_tempRect.alpha._ = GameConfig.tempRectAlpha;
 		_tempRect.setXY(xp, yp);
 		_drawingLayer.addChild(new Entity().add(_tempRect));
 	}
 	private function addPlatform(xp:Float, yp:Float, width:Float, height:Float):Void {
-		if (_tempRectTooSmall || _playerInTempRect || _tempRectOffscreen || _goalInTempRect || _platformInTempRect) { return; }
+		if (_tempRectTooSmall || _playerInTempRect || _tempRectOffscreen || _goalInTempRect || _platformInTempRect || _keyInTempRect) { return; }
 		if (xp == 0 || yp == 0 || width == 0 || height == 0) { return; }
 		addRectBody(xp, yp, width, height, GameConfig.platformColour);
 		updateArea(width, height);
+		OliGameContext.instance.assets.getSound('place').play(0.2);
 	}
 	private function addRectBody(xp:Float, yp:Float, width:Float, height:Float, colour:Int):Void {
 		var rect:RectBody = new RectBody(xp, yp, width, height, colour);
@@ -174,13 +248,15 @@ class PlayModel extends Component
 		addPlatformToProgressList(rect);
 	}
 	private function isPlayerInRect(rect:Rectangle):Bool {
-		if ((_player.sprite.y._ - _player.sprite.getNaturalHeight() / 2 < rect.bottom) && (_player.sprite.y._ + _player.sprite.getNaturalHeight() / 2 > rect.top)) {
-			if ((_player.sprite.x._ - _player.sprite.getNaturalWidth() / 2 < rect.right) && (_player.sprite.x._ + _player.sprite.getNaturalWidth() /2 > rect.left)) {
+		var aabb:AABB = _player.body.bounds;
+		var p:Rectangle = new Rectangle(aabb.x, aabb.y, aabb.width, aabb.height);
+		if ((p.top < rect.bottom) && (p.bottom > rect.top)) {
+			if ((p.left < rect.right) && (p.right > rect.left)) {
 				return true;
 			}
 		}
-		if ((_player.sprite.x._ - _player.sprite.getNaturalWidth() / 2 < rect.right) && (_player.sprite.x._ + _player.sprite.getNaturalWidth() / 2 > rect.left)) {
-			if ((_player.sprite.y._ - _player.sprite.getNaturalHeight() / 2 < rect.bottom) && (_player.sprite.y._ + _player.sprite.getNaturalHeight() / 2 > rect.top)) {
+		if ((p.left < rect.right) && (p.right> rect.left)) {
+			if ((p.top < rect.bottom) && (p.bottom > rect.top)) {
 				return true;
 			}
 		}
@@ -194,6 +270,22 @@ class PlayModel extends Component
 		}
 		if ((_goal.rect.left < rect.right) && (_goal.rect.right > rect.left)) {
 			if ((_goal.rect.top < rect.bottom) && (_goal.rect.bottom > rect.top)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	private function isPlayerOverDoor():Bool {
+		var rect:Rectangle = _goal.rect;
+		var aabb:AABB = _player.body.bounds;
+		var p:Rectangle = new Rectangle(aabb.x, aabb.y, aabb.width, aabb.height);
+		if ((p.top < rect.bottom) && (p.bottom > rect.top)) {
+			if ((p.left < rect.right) && (p.right > rect.left)) {
+				return true;
+			}
+		}
+		if ((p.left < rect.right) && (p.right> rect.left)) {
+			if ((p.top < rect.bottom) && (p.bottom > rect.top)) {
 				return true;
 			}
 		}
@@ -215,26 +307,67 @@ class PlayModel extends Component
 		}
 		return false;
 	}
+	private function areAnyKeysInRect(rect:Rectangle):Bool {
+		for (key in _allKeys) {
+			var plat:Rectangle = key.rect;
+			if ((plat.top < rect.bottom) && (plat.bottom > rect.top)) {
+				if ((plat.left < rect.right) && (plat.right > rect.left)) {
+					return true;
+				}
+			}
+			if ((plat.left < rect.right) && (plat.right > rect.left)) {
+				if ((plat.top < rect.bottom) && (plat.bottom > rect.top)) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
 	override public function onUpdate(dt:Float):Void {
 		if (_tempRect != null) {
 			var rect:Rectangle = new Rectangle(_tempRect.x._, _tempRect.y._, _tempRect.getNaturalWidth(), _tempRect.getNaturalHeight());
 			_playerInTempRect =	isPlayerInRect(rect);
 			_goalInTempRect =	isGoalInRect(rect);
 			_platformInTempRect =	areAnyPlatformsInRect(rect);
+			_keyInTempRect =	areAnyKeysInRect(rect);
 		}
-		if (VecFunc.distanceCheck(_player.body.position, _goal.position, 10)) {
+		if (isPlayerOverDoor()) {
+			if (Lambda.count(_allKeys) == 0 && !finished) {
+				finished = true;
+				_player.sprite.alpha.animateTo(0, 1, Ease.circOut);
+				OliGameContext.instance.assets.getSound('door').play(0.2);
+				Viewport.instance.fadeOut(0x000000, 1, function():Void {
+					updateTime();
+					updateJumps();
+					updatePlatformsPlaced();
+					OliGameContext.instance.director.unwindToScene(SummaryScene.create(_progressTable, _numKeys, _numHaz));
+				});
+			}else {
+			}
+		}
+		if (finished) {
 			_player.body.velocity = Vec2.get();
-			_player.sprite.alpha.animateTo(0, 1, Ease.circOut);
-			Viewport.instance.fadeOut(0x000000, 1, function():Void {
-				updateTime();
-				updateJumps();
-				updatePlatformsPlaced();
-				OliGameContext.instance.director.unwindToScene(SummaryScene.create(_progressTable));		//TODO difficulty
-			});
+		}
+		for (key in _allKeys) {
+			if (VecFunc.distanceCheck(_player.body.position, key.getMidpoint(), GameConfig.keyDistanceThreshold)) {
+				OliGameContext.instance.assets.getSound('key').play(0.4);
+				key.remove();
+				_allKeys.remove(key);
+				break;
+			}
+		}
+		for (bat in _allHaz) {
+			if (isPlayerInRect(bat.getRect())) {
+				_player.sprite.visible = false;
+				OliGameContext.instance.assets.getSound('bat').play(0.1);
+				Viewport.instance.fadeOut(0x000000, 0.5, function():Void {
+					OliGameContext.instance.director.unwindToScene(DedScene.create());
+				});
+			}
 		}
 		_time++;
 	}
-	
+	private var finished:Bool = false;
 	private function updatePlatformsPlaced():Void {
 		var gameplatformasplaced:Int = _progressTable.get(GameConfig.GAME_PLATFORMS_PLACED);
 		if (gameplatformasplaced == null) { gameplatformasplaced = 0; }
@@ -260,7 +393,7 @@ class PlayModel extends Component
 		_progressTable.set(GameConfig.GAME_JUMPS, (gamejumps + jumpstaken));
 	}
 	private inline function getAreaOfPlatform(width:Float, height:Float):Float {
-		return Math.ceil((width * height / GameConfig.playArea)*100);									
+		return Math.ceil(((width * height) / GameConfig.playArea)*100);
 	}
 	private function updateArea(width:Float, height:Float) {
 		var currentScreenArea:Float = _progressTable.get(GameConfig.SCREEN_AREA);
@@ -281,8 +414,8 @@ class PlayModel extends Component
 	}
 	private function getPlatformData(platform:RectBody):Dynamic {
 		var area:Float = getAreaOfPlatform(platform.sprite.getNaturalWidth(), platform.sprite.getNaturalHeight());
-		var midpoint:Vec2 = Vec2.get(platform.sprite.x._ + platform.sprite.getNaturalHeight() / 2, platform.sprite.y._ + platform.sprite.getNaturalWidth() / 2);
-		var dimensions:Vec2 = Vec2.get(platform.sprite.getNaturalHeight(), platform.sprite.getNaturalWidth());
+		var midpoint:Vec2 = Vec2.get(platform.sprite.x._ + platform.sprite.getNaturalWidth() / 2, platform.sprite.y._ + platform.sprite.getNaturalHeight() / 2);
+		var dimensions:Vec2 = Vec2.get(platform.sprite.getNaturalWidth(), platform.sprite.getNaturalHeight());
 		var position:Vec2 = Vec2.get(platform.sprite.x._, platform.sprite.y._);
 		var orientation:String = platform.sprite.getNaturalHeight() > platform.sprite.getNaturalWidth()?GameConfig.VERTICAL:GameConfig.HORIZONTAL;
 		return { area:cast area, midpoint:cast midpoint, orientation: cast orientation, position: cast position, dimensions : cast dimensions }

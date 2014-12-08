@@ -27,15 +27,14 @@ class MenuModel extends Component
 	override public function onAdded():Void {
 		addGraphics();
 		System.pointer.up.connect(function(e:PointerEvent):Void {
-			Viewport.instance.fadeOut(0x000000, 1, function():Void {				
+			OliGameContext.instance.assets.getSound('menu').play(0.3);
+			Viewport.instance.fadeOut(0x000000, 1, function():Void {
 				OliGameContext.instance.director.unwindToScene(PlayScene.create());
 			});
 		}).once();	
 	}
 	private function addGraphics():Void {
-		owner.addChild(new Entity().add(new FillSprite(GameConfig.bgColour, OliG.width, OliG.height)));	// bg
-		owner.addChild(new Entity()
-			.add(_touchToPlay = new ImageSprite(OliGameContext.instance.assets.getTexture('menu/touch-to-play'))));
+		owner.addChild(new Entity().add(new ImageSprite(OliGameContext.instance.assets.getTexture('menu/menu'))));	// bg
 	}
 	
 }

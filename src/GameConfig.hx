@@ -9,7 +9,7 @@ import oli.util.OliG;
  */
 class GameConfig
 {
-	public static var bgColour:Int = 0x2c2c2c;
+	public static var bgColour:Int = 0xC0C0C0;
 	
 	public static var playArea:Float = 79200;
 	
@@ -31,7 +31,7 @@ class GameConfig
 	public static var PERSISTENT_DATA_KEY:String = 'ld31-onescreen-revilossor-data';
 	
 	public static var borderWidth:Float = 4;
-	public static var borderColour:Int = 0xff00ff;
+	public static var borderColour:Int = 0x1e1e1e;
 	
 	public static var playerWidth:Float = 10; 
 	public static var playerHeight:Float = 14; 
@@ -41,15 +41,25 @@ class GameConfig
 	public static var playerJumpInitial:Float = 15;
 	public static var playerJumpHold:Float = 2.75;
 	public static var playerJumpDuration:Int = 20;
+	public static var playerStartPos:Vec2 = Vec2.get(165, 220 - 4 - 14);
+	public static var playerRuncycleDuration:Float = 0.3;
 	
 	public static var tempRectColour:Int = 0xffffff;
 	public static var tempRectErrorColour:Int = 0xff0000;
 	public static var tempRectAlpha:Float = 0.5;
 	
 	public static var platformColour:Int = 0xff00ff;
-	public static var minimumPlatformSize:Float = 16;
+	public static var minimumPlatformSize:Float = 12;
 	
 	public static var goalPlatformColour:Int = 0x888888;
 	public static var goalX:Float = 158;
 	public static var goalY:Float = 20;
+	public static var goalDistanceThreshold:Float = 10;
+	
+	public static var keyDistanceThreshold:Float = 10;
+	
+	public static var summaryInitDuration:Float = 2;
+	
+	public static var keysMod:Int = 10;
+	
 }
